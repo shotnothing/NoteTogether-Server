@@ -3,7 +3,7 @@ const User = require("../../user/model/User");
 
 const purchaseController = require("./purchaseController");
 
-const PER_PAGE = 5;
+const PER_PAGE = 10;
 const PREVIEW_LEN = 5;
 const MAX_TITLE_LENGTH = 32;
 
