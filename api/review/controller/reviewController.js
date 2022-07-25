@@ -14,7 +14,6 @@ exports.createReview = async (req, res) => {
 
     // Create Review (assume first that its not a fork)
     var review = new Review({
-      title: req.body.title,
       content: req.body.content,
       userId: userId,
       noteId: noteId
@@ -25,6 +24,7 @@ exports.createReview = async (req, res) => {
     let note = await Note.findById(noteId);
     note.reviews = [review._id, ...note.reviews];
     await note.save();
+    let user = await User.findById(userId);
 
     // credit system
     await addCredited(note, user, change = CREDITS_AWARDED_REVIEWER);
@@ -32,7 +32,7 @@ exports.createReview = async (req, res) => {
     res.status(200).json({ review: savedReview });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Create Review Failed" });
   }
 }
 
@@ -49,13 +49,12 @@ exports.readReview = async (req, res) => {
     let author = await User.findById(review.userId);
 
     res.status(200).json({
-      title: review.title,
       content: review.content,
       author: author.username
     });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Read Review Failed" });
   }
 }
 
@@ -92,7 +91,7 @@ exports.updateReview = async (req, res) => {
     res.status(200).json({ Review: review });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Update Review Failed" });
   }
 }
 
@@ -127,7 +126,7 @@ exports.deleteReview = async (req, res) => {
     res.status(200).json({ Review: savedReview });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Delete Review Failed" });
   }
 }
 

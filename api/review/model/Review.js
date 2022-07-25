@@ -1,9 +1,5 @@
 const mongoose = require("mongoose");
 const ReviewSchema = mongoose.Schema({
-  title: {
-    type: String,
-    required: [true, "Please include a title for the Review!"]
-  },
   content: {
     type: String
   },
@@ -22,16 +18,15 @@ const ReviewSchema = mongoose.Schema({
     required: true,
     default: Date.now,
   },
-  isDeleted: {
-    type: Boolean,
-    required: true,
-    default: false,
-  },
   noteId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true
   },
-  credited: {
+  votes: {
+    type: Number,
+    default: 0,
+  },
+  creditedVote: {
     type: [mongoose.Schema.Types.ObjectId],
     ref: 'Credited',
     default: []

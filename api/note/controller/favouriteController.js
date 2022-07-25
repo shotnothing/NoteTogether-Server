@@ -32,7 +32,7 @@ exports.favourite = async (req, res) => {
         status = "unfavourited";
         break;
 
-      case "toggle":
+      default:
         if (user.favourited.includes(noteId)) { // if favourited, unfavourite
           await removeFavourite(noteId, user);
           status = "unfavourited";
@@ -46,7 +46,7 @@ exports.favourite = async (req, res) => {
     res.status(200).json({ status: status });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Favourite Operation Failed" });
   }
 }
 
@@ -63,12 +63,15 @@ exports.checkFavourited = async (req, res) => {
     res.status(200).json({ favourited: user.favourited.includes(noteId) });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Check Favourite Failed" });
   }
 }
 
 async function addFavourite(noteId, user) {
   user.favourited = [noteId, ...user.favourited];
+  const note = await Note.findById(noteId);
+  note.creditedVFavourite = [user._id, ...note.creditedFavourite];
+  await note.save();
   const status = await user.save();
   return status;
 }

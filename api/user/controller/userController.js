@@ -1,6 +1,8 @@
 const User = require("../model/User");
 const Note = require("../../note/model/Note");
 
+const noteController = require("../../note/controller/noteController");
+
 const MAX_USERNAME_LENGTH = 16;
 const MIN_USERNAME_LENGTH = 3;
 const MAX_PASSWORD_LENGTH = 16;
@@ -50,7 +52,7 @@ exports.registerNewUser = async (req, res) => {
     res.status(201).json({ data, token });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Registration Failed" });
   }
 };
 
@@ -68,7 +70,7 @@ exports.loginUser = async (req, res) => {
     res.status(201).json({ user, token });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Login Failed" });
   }
 };
 
@@ -85,7 +87,7 @@ exports.getUserDetails = async (req, res) => {
     res.status(200).json({ userData: user });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "User Details Retrieval Failed" });
   }
 };
 
@@ -102,13 +104,46 @@ exports.createdNotes = async (req, res) => {
                               path: 'userId',
                               select: 'username',
                               model: 'User'
+                            },
+                            select: {
+                              creditedVote: 0,
+                              creditedReview: 0,
+                              creditedFavourite: 0,
                             }
                           });
+
+    await resolveAllForks(notes.notes);
 
     res.status(200).json({ notes: notes });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Get User Created Notes Failed" });
+  }
+};
+
+exports.publishedNotes = async (req, res) => {
+  try {
+    const userId = req.userData._id;
+
+    const notes = await Note
+      .find({
+        userId: userId,
+        isPublished: true,
+        isDeleted: false
+      })
+      .sort({ datePublished: -1 })
+      .select("_id title userId");
+
+    for (let i = 0; i < notes.length; i++) {
+      let note = notes[i];
+      note["username"] = await noteController.getUsernameChain(note);
+      notes[i] = note;
+    }
+
+    res.status(200).json({ notes: notes });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ err: "Get User Published Notes Failed" });
   }
 };
 
@@ -125,13 +160,20 @@ exports.favouritedNotes = async (req, res) => {
                               path: 'userId',
                               select: 'username',
                               model: 'User'
+                            },
+                            select: {
+                              creditedVote: 0,
+                              creditedReview: 0,
+                              creditedFavourite: 0,
                             }
                           });
+
+    await resolveAllForks(notes.favourited);
 
     res.status(200).json({ notes: notes });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Get User Favourited Notes Failed" });
   }
 };
 
@@ -142,21 +184,54 @@ exports.purchasedNotes = async (req, res) => {
 
     let notes = await User.findById(userId)
                           .select('purchased')
-                          // .populate({
-                          //   path: 'purchased',
-                          //   populate: {
-                          //     path: 'userId',
-                          //     select: 'username',
-                          //     model: 'User'
-                          //   }
-                          // });
+                          .populate({
+                            path: 'purchased',
+                            populate: {
+                              path: 'userId',
+                              select: 'username',
+                              model: 'User'
+                            },
+                            select: {
+                              creditedVote: 0,
+                              creditedReview: 0,
+                              creditedFavourite: 0,
+                            }
+                          });
+    
+    await resolveAllForks(notes.purchased);
 
     res.status(200).json({ notes: notes });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Get User Purchased Notes Failed" });
   }
 };
+
+exports.bestUsers = async (req, res) => {
+  try {
+    const userId = req.userData._id;
+
+    let users = await User
+      .find()
+      .sort({points: -1})
+      .select("username points")
+      .limit(5);
+
+    res.status(200).json({ users: users });
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ err: "Get Best Users Failed" });
+  }
+}
+
+async function resolveAllForks(notes) {
+  for (let i = 0; i < notes.length; i++) {
+    let note = notes[i];
+    if (!!note.forkOf){
+      note.content = await noteController.resolveFork(note);
+    }
+  }
+}
 
 // favouritedNotes
 // purchasedNotes

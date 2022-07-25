@@ -31,8 +31,13 @@ const userSchema = mongoose.Schema({
   },  
   credits: {
     type: Number,
-    required: false,
-    default: 0
+    required: true,
+    default: 10
+  },
+  points: {
+    type: Number,
+    required: true,
+    default: 0,
   },
   voted: {
     type: [
@@ -68,7 +73,7 @@ userSchema.methods.generateAuthToken = async function() {
   const token = jwt.sign(
     { _id: user._id, username: user.username, email: user.email },
     "secret",
-    {expiresIn: "1h"} //3 mins
+    {expiresIn: "3h"}
   );
   user.tokens = user.tokens.concat({ token });
   await user.save();

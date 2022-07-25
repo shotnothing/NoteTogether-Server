@@ -17,7 +17,7 @@ exports.voteNote = async (req, res) => {
       case "upvote":
         if (isVoted(note, user)) {
           if (isUpvote(note, user)) {
-            return res.status(401).json({ err: "Note already upvoted" });
+            return res.status(409).json({ err: "Note already upvoted" });
           } else {
             // clear downvote
             await clearVote(note, user, increase = true);
@@ -37,7 +37,7 @@ exports.voteNote = async (req, res) => {
       case "downvote":
         if (isVoted(note, user)) {
           if (!isUpvote(note, user)) {
-            return res.status(401).json({ err: "Note already downvoted" });
+            return res.status(409).json({ err: "Note already downvoted" });
           } else {
             // clear upvote
             await clearVote(note, user, increase = false);
@@ -60,7 +60,7 @@ exports.voteNote = async (req, res) => {
 
           return res.status(200).json({ status: status});
         } else {
-          return res.status(401).json({ err: "Note has no vote by this user" });
+          return res.status(409).json({ err: "Note has no vote by this user" });
         }
         break;
 
@@ -70,7 +70,69 @@ exports.voteNote = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Vote Failed" });
+  }
+}
+
+exports.upvoteNote = async (req, res) => {
+  try {
+    // Id of requestor
+    const userId = req.userData._id;
+    let user = await User.findById(userId);
+
+    const noteId = req.body.noteId;
+    let note = await Note.findById(noteId);
+
+    if (isVoted(note, user)) {
+      if (isUpvote(note, user)) {
+        return res.status(409).json({ err: "Note already upvoted" });
+      } else {
+        // clear downvote
+        await clearVote(note, user, increase = true);
+
+        // do upvote
+        const status = await upvote(note, user);
+        return res.status(200).json({ status: "Note changed to upvoted"});
+      }
+    } else {
+      // do upvote
+      const status = upvote(note, user);
+      return res.status(200).json({ status: "Note upvoted"});
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ err: "Upvote Failed" });
+  }
+}
+
+exports.downvoteNote = async (req, res) => {
+  try {
+    // Id of requestor
+    const userId = req.userData._id;
+    let user = await User.findById(userId);
+
+    const noteId = req.body.noteId;
+    let note = await Note.findById(noteId);
+
+    if (isVoted(note, user)) {
+      if (!isUpvote(note, user)) {
+        return res.status(409).json({ err: "Note already downvoted" });
+      } else {
+        // clear upvote
+        await clearVote(note, user, increase = false);
+
+        // do downvote
+        const status = await downvote(note, user);
+        return res.status(200).json({ status: "Note changed to downvoted"});
+      }
+    } else {
+      // do downvote
+      const status = downvote(note, user);
+      return res.status(200).json({ status: "Note downvoted"});
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(400).json({ err: "Downvote Failed" });
   }
 }
 
@@ -95,7 +157,7 @@ exports.checkVoted = async (req, res) => {
 
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Check Voted Failed" });
   }
 }
 
@@ -107,7 +169,7 @@ exports.getVotes = async (req, res) => {
     res.status(200).json({ votes: note.votes });
   } catch (err) {
     console.log(err);
-    res.status(400).json({ err: err });
+    res.status(400).json({ err: "Get Votes Failed" });
   }
 }
 
