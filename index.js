@@ -5,7 +5,8 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const config = require("./config/db");
-const fs = require('fs')
+const fs = require('fs');
+const newrelic = require('newrelic');
 
 const app = express();
 
